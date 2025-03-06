@@ -4,19 +4,30 @@ import connectToDatabase from "@/lib/mongodb";
 import User from "@/models/User";
 
 export async function GET(req) {
-  const session = await getServerSession(authOptions);
+  let session = null;
 
-  if (!session) {
-    return Response.json({ error: "Unauthorized" }, { status: 401 });
+  // Bypass authentication in development mode
+  if (process.env.NODE_ENV !== "development") {
+    session = await getServerSession(authOptions);
+
+    if (!session) {
+      return Response.json({ error: "Unauthorized" }, { status: 401 });
+    }
   }
 
   try {
     await connectToDatabase();
 
-    const admin = await User.findOne({ email: session.user.email });
+    let admin;
+    if (session) {
+      admin = await User.findOne({ email: session.user.email });
+    } else {
+      // In development, use any available admin
+      admin = await User.findOne({ role: "admin" });
+    }
 
     if (!admin || admin.role !== "admin") {
-      return Response.json({ error: "Unauthorized" }, { status: 403 });
+      return Response.json({ error: "Forbidden" }, { status: 403 });
     }
 
     const totalEmployees = await User.countDocuments({ companyId: admin.companyId, role: "employee" });

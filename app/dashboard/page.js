@@ -12,7 +12,12 @@ export default function DashboardPage() {
   const router = useRouter();
 
   useEffect(() => {
-    if (status === "authenticated") {
+    const isLocal = typeof window !== "undefined" && window.location.hostname === "localhost";
+
+    if (isLocal) {
+      // Auto-set admin role in local environment
+      setRole("admin");
+    } else if (status === "authenticated") {
       fetchUserRole();
     } else if (status === "unauthenticated") {
       router.push("/login"); // Redirect if not logged in
@@ -25,7 +30,7 @@ export default function DashboardPage() {
       const data = await res.json();
 
       if (res.ok) {
-        setRole(data.role); // Set the role from the backend
+        setRole(data.role);
       } else {
         console.error("Failed to fetch user role:", data.error);
       }
@@ -34,7 +39,7 @@ export default function DashboardPage() {
     }
   };
 
-  if (status === "loading" || !role) return <p className="text-center text-white">Loading...</p>;
+  if (!role) return <p className="text-center text-white">Loading...</p>;
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-900 text-white">
