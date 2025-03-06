@@ -6,59 +6,81 @@ import User from "@/models/User";
 
 export async function GET(req) {
   try {
-    let session = null;
-    let employee = null;
-
+    await connectToDatabase();
+    
+    // Handle development environment - completely bypass auth
+    let user;
+    let totalAttendance;
+    let latestAttendance;
+    
     if (process.env.NODE_ENV === "development") {
-      console.log("🔧 Development Mode: Using dummy user...");
-
-      // Use a dummy employee for development mode
-      employee = {
-        name: "Demo User",
-        email: "demo@company.com",
+      // Mock user for development
+      user = { 
+        _id: "DEV_USER_ID", 
+        companyId: "DEV_COMPANY_ID", 
+        name: "Dev User", 
         role: "employee",
-        companyId: "DEMO12345",
-        _id: "demo_user_id",
+        email: "dev@example.com"
+      };
+      
+      // Mock attendance data
+      const now = new Date();
+      const checkInTime = new Date(now);
+      checkInTime.setHours(9, 0, 0, 0); // Today at 9 AM
+      
+      // Sometimes show a checkout time, sometimes don't (to simulate active check-in)
+      const includeCheckout = Math.random() > 0.5;
+      const checkOutTime = includeCheckout ? new Date(now.setHours(17, 0, 0, 0)) : null; // Today at 5 PM
+      
+      totalAttendance = 15; // Mock 15 days of attendance
+      latestAttendance = {
+        checkInTime: checkInTime,
+        checkOutTime: checkOutTime
       };
     } else {
-      session = await getServerSession(authOptions);
-
-      if (!session || !session.user) {
-        return Response.json({ error: "Unauthorized" }, { status: 401 });
+      // Production authentication flow
+      const session = await getServerSession(authOptions);
+      if (!session || !session.user.email) {
+        return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401 });
       }
-
-      await connectToDatabase();
-      employee = await User.findOne({ email: session.user.email });
-
-      if (!employee || employee.role !== "employee") {
-        return Response.json({ error: "Forbidden" }, { status: 403 });
+      user = await User.findOne({ email: session.user.email });
+      if (!user) {
+        return new Response(JSON.stringify({ error: "User not found" }), { status: 404 });
       }
+      
+      // Count total days attended
+      totalAttendance = await Attendance.countDocuments({
+        userId: user._id
+      });
+      
+      // Get latest check-in
+      latestAttendance = await Attendance.findOne({
+        userId: user._id
+      }).sort({ checkInTime: -1 });
     }
-
-    let totalDaysAttended = 0;
-    let lastCheckInTime = null;
-
-    if (process.env.NODE_ENV === "development") {
-      totalDaysAttended = 5; // Dummy attendance count
-      lastCheckInTime = "2025-03-06T10:00:00.000Z"; // Dummy timestamp
-    } else {
-      totalDaysAttended = await Attendance.countDocuments({ userId: employee._id });
-      const lastCheckIn = await Attendance.findOne({ userId: employee._id })
-        .sort({ checkInTime: -1 })
-        .select("checkInTime");
-
-      lastCheckInTime = lastCheckIn ? lastCheckIn.checkInTime : null;
-    }
-
-    return Response.json({
-      name: employee.name,
-      role: employee.role,
-      companyId: employee.companyId,
-      totalDaysAttended,
-      lastCheckInTime,
-    });
+    
+    const stats = {
+      name: user.name,
+      role: user.role,
+      companyId: user.companyId,
+      totalDaysAttended: totalAttendance,
+      lastCheckInTime: latestAttendance?.checkInTime || null,
+      lastCheckOutTime: latestAttendance?.checkOutTime || null,
+      // Add some extra stats for development
+      ...(process.env.NODE_ENV === "development" ? {
+        devMode: true,
+        mockData: true,
+        thisWeekAttendance: 3,
+        thisMonthAttendance: 12
+      } : {})
+    };
+    
+    return new Response(JSON.stringify(stats), { status: 200 });
   } catch (error) {
-    console.error("❌ Error fetching attendance stats:", error);
-    return Response.json({ error: "Server error" }, { status: 500 });
+    console.error("Stats API error:", error);
+    return new Response(
+      JSON.stringify({ error: `Server error: ${error.message}` }), 
+      { status: 500 }
+    );
   }
 }
