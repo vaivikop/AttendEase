@@ -19,9 +19,9 @@ export default function RegisterPage() {
 
   useEffect(() => {
     if (user.role === "admin") {
-      setUser((prev) => ({ ...prev, companyId: "" })); // Reset companyId if admin
+      setUser((prev) => ({ ...prev, companyId: "" }));
     } else {
-      setUser((prev) => ({ ...prev, companyName: "" })); // Reset companyName if employee
+      setUser((prev) => ({ ...prev, companyName: "" }));
     }
   }, [user.role]);
 
@@ -43,7 +43,7 @@ export default function RegisterPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validateForm()) return;
-  
+
     setLoading(true);
     try {
       const response = await fetch("/api/auth/register", {
@@ -51,17 +51,8 @@ export default function RegisterPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(user),
       });
-  
-      let data;
-      try {
-        data = await response.json();
-      } catch (jsonError) {
-        console.error("Failed to parse JSON:", jsonError);
-        toast.error("An error occurred while processing the response.");
-        setLoading(false);
-        return;
-      }
-  
+
+      const data = await response.json();
       if (response.ok) {
         toast.success("Registration successful! Redirecting...");
         setTimeout(() => router.push("/login"), 2000);
@@ -69,7 +60,6 @@ export default function RegisterPage() {
         toast.error(data.message || "Registration failed. Please try again.");
       }
     } catch (error) {
-      console.error("Registration error:", error);
       toast.error("An error occurred during registration.");
     } finally {
       setLoading(false);
@@ -77,17 +67,18 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-900 text-white px-4">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 to-black text-white px-4">
       <div className="w-full max-w-md bg-gray-800 p-6 rounded-lg shadow-lg">
-        <h2 className="text-3xl font-bold text-center text-purple-400">Register</h2>
+        <h2 className="text-3xl font-bold text-center text-purple-400">AttendEase Register</h2>
+        <p className="text-gray-400 text-center mt-2">Create your account</p>
 
-        <form onSubmit={handleSubmit} className="space-y-4 mt-4">
+        <form onSubmit={handleSubmit} className="space-y-6 mt-4">
           <div>
             <label className="block text-sm font-medium text-gray-300">Email</label>
             <input
               type="email"
               placeholder="Enter your email"
-              className="w-full px-4 py-2 rounded bg-gray-700 focus:ring-2 focus:ring-purple-500"
+              className={`w-full px-4 py-2 rounded bg-gray-700 focus:outline-none focus:ring-2 focus:ring-purple-500`}
               value={user.email}
               onChange={(e) => setUser({ ...user, email: e.target.value })}
             />
@@ -99,7 +90,7 @@ export default function RegisterPage() {
             <input
               type="password"
               placeholder="Enter your password"
-              className="w-full px-4 py-2 rounded bg-gray-700 focus:ring-2 focus:ring-purple-500"
+              className={`w-full px-4 py-2 rounded bg-gray-700 focus:outline-none focus:ring-2 focus:ring-purple-500`}
               value={user.password}
               onChange={(e) => setUser({ ...user, password: e.target.value })}
             />
@@ -156,10 +147,8 @@ export default function RegisterPage() {
         </form>
 
         <p className="text-sm text-center text-gray-400 mt-4">
-          Already have an account?{" "}
-          <a href="/login" className="text-purple-400 hover:underline">
-            Login
-          </a>
+          Already have an account? {" "}
+          <a href="/login" className="text-purple-400 hover:underline">Login</a>
         </p>
       </div>
     </div>
