@@ -4,12 +4,12 @@ import connectToDatabase from "@/lib/mongodb";
 import CompanySettings from "@/models/CompanySettings";
 import User from "@/models/User";
 
-async function getAdminUser(session) {
+async function getUser(session) {
   if (process.env.NODE_ENV === "development") {
-    return { role: "admin", companyId: "DEV_COMPANY_ID" }; // Bypass auth in development
+    return { role: "user", companyId: "DEV_COMPANY_ID" }; // Bypass auth in development
   }
 
-  if (!session || !session.user.email) return null;
+  if (!session || !session.user?.email) return null;
   return await User.findOne({ email: session.user.email });
 }
 
@@ -17,20 +17,20 @@ export async function GET(req) {
   try {
     await connectToDatabase();
     const session = await getServerSession(authOptions);
-    const admin = await getAdminUser(session);
+    const user = await getUser(session);
 
-    if (!admin || admin.role !== "admin") {
-      return new Response(JSON.stringify({ error: "Access Denied" }), { status: 403 });
+    if (!user) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401 });
     }
 
-    // Fetch settings for the admin's company
-    const settings = await CompanySettings.findOne({ companyId: admin.companyId });
+    // Fetch settings for the user's company
+    const settings = await CompanySettings.findOne({ companyId: user.companyId });
+
     if (!settings) {
-      // Return default empty settings instead of error
-      return new Response(JSON.stringify({ 
-        workingHours: { start: "", end: "" }, 
-        shifts: [] 
-      }), { status: 200 });
+      return new Response(
+        JSON.stringify({ workingHours: { start: "", end: "" }, shifts: [] }),
+        { status: 200 }
+      );
     }
 
     return new Response(JSON.stringify(settings), { status: 200 });
@@ -44,21 +44,19 @@ export async function POST(req) {
   try {
     await connectToDatabase();
     const session = await getServerSession(authOptions);
-    const admin = await getAdminUser(session);
+    const user = await getUser(session);
 
-    if (!admin || admin.role !== "admin") {
-      return new Response(JSON.stringify({ error: "Access Denied" }), { status: 403 });
+    if (!user) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401 });
     }
 
     const body = await req.json();
     const { workingHours, shifts } = body;
-    
-    console.log("Received data:", { workingHours, shifts });
-    
+
     if (!workingHours.start || !workingHours.end) {
       return new Response(JSON.stringify({ error: "Working hours are required" }), { status: 400 });
     }
-    
+
     if (!Array.isArray(shifts)) {
       return new Response(JSON.stringify({ error: "Shifts must be an array" }), { status: 400 });
     }
@@ -71,31 +69,17 @@ export async function POST(req) {
     }
 
     // Find or create company settings
-    let settings = await CompanySettings.findOne({ companyId: admin.companyId });
+    let settings = await CompanySettings.findOne({ companyId: user.companyId });
 
     if (settings) {
-      // Update using findOneAndUpdate for atomic operation
-      const updated = await CompanySettings.findOneAndUpdate(
-        { companyId: admin.companyId },
-        { 
-          $set: { 
-            workingHours: workingHours,
-            shifts: shifts 
-          } 
-        },
+      await CompanySettings.findOneAndUpdate(
+        { companyId: user.companyId },
+        { $set: { workingHours, shifts } },
         { new: true }
       );
-      
-      console.log("Updated settings:", updated);
     } else {
-      // Create new settings
-      settings = new CompanySettings({
-        companyId: admin.companyId,
-        workingHours,
-        shifts,
-      });
+      settings = new CompanySettings({ companyId: user.companyId, workingHours, shifts });
       await settings.save();
-      console.log("Created new settings:", settings);
     }
 
     return new Response(JSON.stringify({ message: "Settings updated successfully" }), { status: 200 });
