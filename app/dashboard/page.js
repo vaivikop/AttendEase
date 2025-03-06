@@ -16,7 +16,7 @@ export default function DashboardPage() {
 
     if (isLocal) {
       // Auto-set admin role in local environment
-      setRole("admin");
+      setRole("employee");
     } else if (status === "authenticated") {
       fetchUserRole();
     } else if (status === "unauthenticated") {
