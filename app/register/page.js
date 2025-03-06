@@ -43,22 +43,37 @@ export default function RegisterPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validateForm()) return;
-
+  
     setLoading(true);
-    const response = await fetch("/api/auth/register", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(user),
-    });
-
-    const data = await response.json();
-    if (response.ok) {
-      toast.success("Registration successful! Redirecting...");
-      setTimeout(() => router.push("/login"), 2000);
-    } else {
-      toast.error(data.message);
+    try {
+      const response = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(user),
+      });
+  
+      let data;
+      try {
+        data = await response.json();
+      } catch (jsonError) {
+        console.error("Failed to parse JSON:", jsonError);
+        toast.error("An error occurred while processing the response.");
+        setLoading(false);
+        return;
+      }
+  
+      if (response.ok) {
+        toast.success("Registration successful! Redirecting...");
+        setTimeout(() => router.push("/login"), 2000);
+      } else {
+        toast.error(data.message || "Registration failed. Please try again.");
+      }
+    } catch (error) {
+      console.error("Registration error:", error);
+      toast.error("An error occurred during registration.");
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   return (
