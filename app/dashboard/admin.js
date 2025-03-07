@@ -26,7 +26,6 @@ export default function AdminDashboard() {
   const [weekends, setWeekends] = useState([0, 6]); // ✅ Default: Saturday & Sunday
   const [holidays, setHolidays] = useState([]); // ✅ Default: Empty array
 
-
   // Attendance states
   const [attendanceRecords, setAttendanceRecords] = useState([]);
   const [filteredAttendance, setFilteredAttendance] = useState([]);
@@ -342,39 +341,44 @@ const removeShift = (index) => {
   );
 
   return (
-    <div className="p-6 text-white min-h-screen bg-gray-900 flex flex-col items-center">
-      <h2 className="text-4xl font-extrabold mb-6 text-purple-400 text-center">
-        Admin Dashboard
-      </h2>
-
-      {stats && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-6xl">
-          <div className="p-6 bg-gray-800 rounded-lg shadow-xl border border-purple-600">
-            <p className="text-lg text-gray-300">Company ID</p>
-            <p className="text-2xl font-bold text-purple-400">{stats.companyId}</p>
-          </div>
-          <div className="grid grid-cols-2 gap-6">
-            <div className="p-6 bg-gray-700 rounded-lg text-center shadow-lg">
-              <p className="text-lg text-gray-300">Total Employees</p>
-              <p className="text-3xl font-bold text-purple-400">{stats.totalEmployees}</p>
+      <div className="p-4 md:p-6 text-white min-h-screen bg-gray-900 flex flex-col items-center">
+        <h2 className="text-3xl md:text-4xl font-extrabold mb-6 text-purple-400 text-center">
+          Admin Dashboard
+        </h2>
+  
+        {/* Stats Cards Section - Fully responsive with proper stacking on mobile */}
+        {stats && (
+          <div className="w-full max-w-6xl space-y-4 md:space-y-6">
+            {/* Company ID Card - Standalone for better mobile visibility */}
+            <div className="p-4 md:p-6 bg-gray-800 rounded-lg shadow-xl border border-purple-600 w-full">
+              <p className="text-lg text-gray-300">Company ID</p>
+              <p className="text-2xl font-bold text-purple-400">{stats.companyId}</p>
             </div>
-            <div className="p-6 bg-gray-700 rounded-lg text-center shadow-lg">
-              <p className="text-lg text-gray-300">Total Admins</p>
-              <p className="text-3xl font-bold text-purple-400">{stats.totalAdmins}</p>
+            
+            {/* Stats Cards - Stack on mobile, side-by-side on tablet/desktop */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="p-4 md:p-6 bg-gray-700 rounded-lg text-center shadow-lg">
+                <p className="text-lg text-gray-300">Total Employees</p>
+                <p className="text-3xl font-bold text-purple-400">{stats.totalEmployees}</p>
+              </div>
+              <div className="p-4 md:p-6 bg-gray-700 rounded-lg text-center shadow-lg">
+                <p className="text-lg text-gray-300">Total Admins</p>
+                <p className="text-3xl font-bold text-purple-400">{stats.totalAdmins}</p>
+              </div>
             </div>
           </div>
-        </div>
-      )}
-
-      {/* Working Hours Section */}
-      <div className="mt-8 w-full max-w-6xl bg-gray-800 p-6 rounded-lg shadow-xl border border-purple-600">
-        <h3 className="text-2xl font-bold text-purple-300 mb-4">Set Working Hours</h3>
-        <div className="flex flex-col sm:flex-row gap-4 mb-4">
+        )}
+         {/* Working Hours Section - Improved layout for mobile */}
+         <div className="mt-6 md:mt-8 w-full max-w-6xl bg-gray-800 p-4 md:p-6 rounded-lg shadow-xl border border-purple-600">
+        <h3 className="text-xl md:text-2xl font-bold text-purple-300 mb-4">Set Working Hours</h3>
+        
+        {/* Time inputs - Stack on mobile, side-by-side on larger screens */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
           <div className="flex flex-col">
             <label className="mb-1 text-gray-300">Start Time</label>
             <input 
               type="time" 
-              className="p-3 bg-gray-700 text-white rounded" 
+              className="p-3 bg-gray-700 text-white rounded w-full" 
               value={workingHours.start} 
               onChange={(e) => setWorkingHours({ ...workingHours, start: e.target.value })} 
             />
@@ -383,7 +387,7 @@ const removeShift = (index) => {
             <label className="mb-1 text-gray-300">End Time</label>
             <input 
               type="time" 
-              className="p-3 bg-gray-700 text-white rounded" 
+              className="p-3 bg-gray-700 text-white rounded w-full" 
               value={workingHours.end} 
               onChange={(e) => setWorkingHours({ ...workingHours, end: e.target.value })} 
             />
