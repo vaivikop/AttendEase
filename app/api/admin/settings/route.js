@@ -9,11 +9,54 @@ async function getUser(session) {
   return await User.findOne({ email: session.user.email });
 }
 
+// ✅ Handle GET Request (Fetch Company Settings)
+export async function GET(req) {
+  try {
+    await connectToDatabase();
+    const session = await getServerSession(authOptions);
+
+    if (!session) {
+      return new Response(JSON.stringify({ error: "Unauthorized: No Session Found" }), {
+        status: 401,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
+    const user = await getUser(session);
+    if (!user) {
+      return new Response(JSON.stringify({ error: "Unauthorized: User not found" }), {
+        status: 403,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
+    const settings = await CompanySettings.findOne({ companyId: user.companyId });
+    if (!settings) {
+      return new Response(JSON.stringify({ error: "Settings not found" }), {
+        status: 404,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
+    return new Response(JSON.stringify(settings), {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+    });
+  } catch (error) {
+    console.error("GET settings error:", error);
+    return new Response(JSON.stringify({ error: "Server error", details: error.message }), {
+      status: 500,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+}
+
+// ✅ Handle POST Request (Update Company Settings)
 export async function POST(req) {
   try {
     await connectToDatabase();
     const session = await getServerSession(authOptions);
-    
+
     if (!session) {
       return new Response(JSON.stringify({ error: "Unauthorized: No Session Found" }), {
         status: 401,
@@ -30,11 +73,9 @@ export async function POST(req) {
     }
 
     const body = await req.json();
-    
-    // Log the received request body for debugging
     console.log("Received settings update request:", body);
 
-    // Ensure all necessary fields exist before updating
+    // Validate request body fields
     if (!body.workingHours || !body.breaks || !body.weekends || !body.attendanceRules) {
       return new Response(JSON.stringify({ error: "Missing required fields in request" }), {
         status: 400,
@@ -42,17 +83,16 @@ export async function POST(req) {
       });
     }
 
-    // Correct field mapping to match schema
     const updateFields = {
       workingHours: {
         start: body.workingHours.start || "09:00",
         end: body.workingHours.end || "17:00",
         requiredHoursPerDay: body.requiredHoursPerDay || 8,
-        flexibleCheckin: body.flexibleCheckIn !== undefined ? body.flexibleCheckIn : true,
-        graceTimeForLate: body.gracePeriod || 15, // Mapped correctly
+        flexibleCheckin: body.flexibleCheckIn, // Fixed field name
+        graceTimeForLate: body.gracePeriod || 15, // Fixed field name
       },
-      breaks: body.breaks,
-      weekends: body.weekends,
+      breaks: body.breaks || { lunchBreak: {}, shortBreaks: {} },
+      weekends: body.weekends || [0, 6],
       holidays: body.holidays || [],
       attendanceRules: {
         autoCheckoutEnabled: body.attendanceRules?.autoCheckoutEnabled ?? true,
