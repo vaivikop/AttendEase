@@ -23,6 +23,9 @@ export default function AdminDashboard() {
   const [shifts, setShifts] = useState([]);
   const [newShift, setNewShift] = useState({ name: "", start: "", end: "" });
   const [isSaving, setIsSaving] = useState(false);
+  const [weekends, setWeekends] = useState([0, 6]); // ✅ Default: Saturday & Sunday
+  const [holidays, setHolidays] = useState([]); // ✅ Default: Empty array
+
 
   // Attendance states
   const [attendanceRecords, setAttendanceRecords] = useState([]);
@@ -116,41 +119,55 @@ export default function AdminDashboard() {
       toast.error("Please set working hours!");
       return;
     }
-
+  
     setIsSaving(true);
-
+  
     try {
+      // ✅ Ensure all fields are included
       const settingsData = {
-        workingHours,
-        requiredHoursPerDay,
-        flexibleCheckin: flexibleCheckIn,
-        graceTimeForLate: gracePeriod,
-        breaks,
-        shifts,
-        attendanceRules,
-        locations,
+        workingHours: {
+          start: workingHours.start,
+          end: workingHours.end,
+          requiredHoursPerDay: requiredHoursPerDay || 8,
+          flexibleCheckin: flexibleCheckIn,  // ✅ Fixed field name
+          graceTimeForLate: gracePeriod || 15, // ✅ Fixed field name
+        },
+        breaks: breaks || { lunchBreak: { start: "13:00", end: "14:00" }, shortBreaks: { count: 2, duration: 15 } },
+        weekends: weekends || [0, 6], // ✅ Ensure default value
+        holidays: holidays || [],
+        attendanceRules: attendanceRules || {
+          autoCheckoutEnabled: true,
+          autoCheckoutTime: "23:59",
+          allowMultipleSessions: true,
+          minimumMinutesPerSession: 30,
+          overtimeThreshold: 480,
+          attendanceReportingTimeZone: "UTC",
+        },
+        locations: locations || [],
       };
-
+  
+      console.log("Sending settings data:", settingsData);
+  
       const res = await fetch("/api/admin/settings", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(settingsData),
       });
-
-      if (res.ok) {
-        toast.success("Settings updated successfully!");
-        await fetchSettings();
-      } else {
-        toast.error("Failed to update settings");
+  
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || "Failed to update settings");
       }
+  
+      toast.success("Settings updated successfully!");
+      await fetchSettings(); // ✅ Refresh settings after update
     } catch (error) {
       console.error("Exception in updateSettings:", error);
-      toast.error("Server error when saving settings");
+      toast.error(error.message || "Server error when saving settings");
     } finally {
       setIsSaving(false);
     }
   };
-
 const addShift = () => {
     if (!newShift.name || !newShift.start || !newShift.end) {
         toast.error("Please fill all shift details");

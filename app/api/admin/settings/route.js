@@ -75,7 +75,7 @@ export async function POST(req) {
     const body = await req.json();
     console.log("Received settings update request:", body);
 
-    // Validate request body fields
+    // ✅ Ensure required fields are present
     if (!body.workingHours || !body.breaks || !body.weekends || !body.attendanceRules) {
       return new Response(JSON.stringify({ error: "Missing required fields in request" }), {
         status: 400,
@@ -83,15 +83,16 @@ export async function POST(req) {
       });
     }
 
+    // ✅ Ensure default values if missing
     const updateFields = {
       workingHours: {
         start: body.workingHours.start || "09:00",
         end: body.workingHours.end || "17:00",
-        requiredHoursPerDay: body.requiredHoursPerDay || 8,
-        flexibleCheckin: body.flexibleCheckIn, // Fixed field name
-        graceTimeForLate: body.gracePeriod || 15, // Fixed field name
+        requiredHoursPerDay: body.workingHours.requiredHoursPerDay || 8,
+        flexibleCheckin: body.workingHours.flexibleCheckin ?? true, // ✅ Fixed field
+        graceTimeForLate: body.workingHours.graceTimeForLate || 15, // ✅ Fixed field
       },
-      breaks: body.breaks || { lunchBreak: {}, shortBreaks: {} },
+      breaks: body.breaks || { lunchBreak: { start: "13:00", end: "14:00" }, shortBreaks: { count: 2, duration: 15 } },
       weekends: body.weekends || [0, 6],
       holidays: body.holidays || [],
       attendanceRules: {
