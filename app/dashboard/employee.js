@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { format, parseISO, formatDistanceStrict } from "date-fns";
+import { format, parseISO } from "date-fns";
 
 export default function EmployeeDashboard() {
   const [stats, setStats] = useState(null);
@@ -18,24 +18,19 @@ export default function EmployeeDashboard() {
     endDate: new Date().toISOString().split('T')[0]
   });
 
-  // Fetch data on component mount or when date range changes
   useEffect(() => {
     fetchData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dateRange]);
 
-  // Timer for current session
   useEffect(() => {
     let timer;
     if (stats && stats.isCheckedIn) {
-      // Start timer
       timer = setInterval(() => {
         const startTime = new Date(stats.currentSession.startTime);
         const duration = Math.floor((new Date() - startTime) / (1000 * 60));
         setCurrentSessionTime(duration);
-      }, 60000); // Update every minute
+      }, 60000);
       
-      // Initialize with current duration
       if (stats.currentSession) {
         setCurrentSessionTime(stats.currentSession.duration);
       }
@@ -47,17 +42,13 @@ export default function EmployeeDashboard() {
   async function fetchData() {
     setLoading(true);
     try {
-      // Fetch attendance stats with date range
-      const statsRes = await fetch(
-        `/api/attendance/stats?startDate=${dateRange.startDate}&endDate=${dateRange.endDate}`
-      );
+      const statsRes = await fetch(`/api/attendance/stats?startDate=${dateRange.startDate}&endDate=${dateRange.endDate}`);
       const statsData = await statsRes.json();
       if (statsRes.ok) {
         setStats(statsData);
         setAttendanceStatus(statsData.isCheckedIn ? "Checked In" : "Not Checked In");
       }
 
-      // Fetch company settings
       const settingsRes = await fetch("/api/admin/settings");
       const settingsData = await settingsRes.json();
       if (settingsRes.ok) {
@@ -93,16 +84,14 @@ export default function EmployeeDashboard() {
         setAttendanceStatus(attendanceStatus === "Checked In" ? "Not Checked In" : "Checked In");
         setNotes("");
         
-        // Show appropriate feedback
         if (data.isLate) {
-          setError(`You're ${data.lateByMinutes} minutes late today, but your check-in has been recorded.`);
+          setError(`You&apos;re ${data.lateByMinutes} minutes late today, but your check-in has been recorded.`);
         } else if (data.earlyDeparture && data.earlyDeparture > 0) {
-          setError(`You're leaving ${data.earlyDeparture} minutes before end of working hours.`);
+          setError(`You&apos;re leaving ${data.earlyDeparture} minutes before end of working hours.`);
         } else if (data.overtime && data.overtime > 0) {
-          setError(`Great job! You've worked ${Math.floor(data.overtime / 60)} hours and ${data.overtime % 60} minutes of overtime today.`);
+          setError(`Great job! You&apos;ve worked ${Math.floor(data.overtime / 60)} hours and ${data.overtime % 60} minutes of overtime today.`);
         }
 
-        // Update stats after successful check-in/out
         await fetchData();
       } else {
         setError(data.error || "Failed to update attendance");
@@ -185,7 +174,7 @@ export default function EmployeeDashboard() {
                 <p className="text-[#A7A7A7]">Role: {stats.role} | Company ID: {stats.companyId}</p>
               </div>
               <div className="text-right">
-                <p className="text-[#BB86FC] font-semibold">Today's Status</p>
+                <p className="text-[#BB86FC] font-semibold">Today&apos;s Status</p>
                 <p className={`font-bold ${attendanceStatus === "Checked In" ? "text-green-400" : "text-[#A7A7A7]"}`}>
                   {attendanceStatus}
                 </p>
@@ -296,7 +285,7 @@ export default function EmployeeDashboard() {
 
           {/* Today's Sessions */}
           <div className="bg-[#181818] text-[#EAEAEA] rounded-lg shadow-lg p-6 mb-6">
-            <h2 className="text-xl font-semibold mb-4">Today's Sessions</h2>
+            <h2 className="text-xl font-semibold mb-4">Today&apos;s Sessions</h2>
             {stats.todaySessions && stats.todaySessions.length > 0 ? (
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
