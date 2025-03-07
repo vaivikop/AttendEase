@@ -98,95 +98,99 @@ export default function AdminDashboard() {
 
   const updateSettings = async () => {
     if (!workingHours.start || !workingHours.end) {
-      toast.error("Please set working hours!");
-      return;
+        toast.error("Please set working hours!");
+        return;
     }
 
     setIsSaving(true);
-    
+
     try {
-      // Prepare the data to send
-      const settingsData = {
-        workingHours: {
-          start: workingHours.start,
-          end: workingHours.end
-        },
-        shifts: shifts.map(shift => ({
-          name: shift.name,
-          start: shift.start,
-          end: shift.end
-        })),
-        requiredHoursPerDay,
-        flexibleCheckIn,
-        gracePeriod
-      };
-      
-      console.log("Sending settings data:", settingsData);
-      
-      const res = await fetch("/api/admin/settings", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(settingsData),
-      });
+        // Prepare the settings data to match the backend schema
+        const settingsData = {
+            workingHours: {
+                start: workingHours.start,
+                end: workingHours.end,
+                requiredHoursPerDay: requiredHoursPerDay || 8,
+                flexibleCheckin: flexibleCheckIn, // Corrected field name
+                graceTimeForLate: gracePeriod || 15, // Corrected field name
+            },
+            breaks: breaks || { lunchBreak: {}, shortBreaks: {} }, // Ensure structure
+            weekends: weekends || [0, 6], // Default to Saturday-Sunday
+            holidays: holidays || [],
+            attendanceRules: {
+                autoCheckoutEnabled: attendanceRules.autoCheckoutEnabled ?? true,
+                autoCheckoutTime: attendanceRules.autoCheckoutTime || "23:59",
+                allowMultipleSessions: attendanceRules.allowMultipleSessions ?? true,
+                minimumMinutesPerSession: attendanceRules.minimumMinutesPerSession || 30,
+                overtimeThreshold: attendanceRules.overtimeThreshold || 480,
+                attendanceReportingTimeZone: attendanceRules.attendanceReportingTimeZone || "UTC",
+            },
+            locations: locations || [],
+        };
 
-      const responseText = await res.text();
-      console.log("Raw response:", responseText);
-      
-      let data;
-      try {
-        data = JSON.parse(responseText);
-      } catch (e) {
-        console.error("Failed to parse response as JSON:", e);
-        toast.error("Received invalid response from server");
-        setIsSaving(false);
-        return;
-      }
+        console.log("Sending settings data:", settingsData);
 
-      if (res.ok) {
-        toast.success("Settings updated successfully!");
-        // Refresh the settings to confirm changes were saved
-        await fetchSettings();
-      } else {
-        console.error("Error updating settings:", data);
-        toast.error(data.error || "Failed to update settings");
-      }
+        const res = await fetch("/api/admin/settings", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(settingsData),
+        });
+
+        const responseText = await res.text();
+        console.log("Raw response:", responseText);
+
+        let data;
+        try {
+            data = JSON.parse(responseText);
+        } catch (e) {
+            console.error("Failed to parse response as JSON:", e);
+            toast.error("Received invalid response from server");
+            setIsSaving(false);
+            return;
+        }
+
+        if (res.ok) {
+            toast.success("Settings updated successfully!");
+            await fetchSettings(); // Refresh settings after update
+        } else {
+            console.error("Error updating settings:", data);
+            toast.error(data.error || "Failed to update settings");
+        }
     } catch (error) {
-      console.error("Exception in updateSettings:", error);
-      toast.error("Server error when saving settings");
+        console.error("Exception in updateSettings:", error);
+        toast.error("Server error when saving settings");
     } finally {
-      setIsSaving(false);
+        setIsSaving(false);
     }
-  };
+};
 
-  const addShift = () => {
+const addShift = () => {
     if (!newShift.name || !newShift.start || !newShift.end) {
-      toast.error("Please fill all shift details");
-      return;
+        toast.error("Please fill all shift details");
+        return;
     }
 
-    // Create a new array with the existing shifts plus the new one
     const updatedShifts = [
-      ...shifts, 
-      {
-        name: newShift.name,
-        start: newShift.start,
-        end: newShift.end
-      }
+        ...shifts,
+        {
+            name: newShift.name,
+            start: newShift.start,
+            end: newShift.end
+        }
     ];
-    
-    // Update state
-    setShifts(updatedShifts);
-    // Reset the new shift form
-    setNewShift({ name: "", start: "", end: "" });
-    
-    console.log("Shifts after adding:", updatedShifts);
-  };
 
-  const removeShift = (index) => {
+    setShifts(updatedShifts);
+    setNewShift({ name: "", start: "", end: "" });
+
+    console.log("Shifts after adding:", updatedShifts);
+};
+
+const removeShift = (index) => {
     const updatedShifts = shifts.filter((_, i) => i !== index);
     setShifts(updatedShifts);
     console.log("Shifts after removing:", updatedShifts);
-  };
+};
+
 
   const fetchEmployees = async () => {
     if (showEmployees) {
