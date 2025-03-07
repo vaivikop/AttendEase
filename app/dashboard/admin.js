@@ -267,8 +267,14 @@ const removeShift = (index) => {
 
   const fetchAttendance = async () => {
     try {
-      const res = await fetch("/api/admin/attendance");
+      let url = "/api/admin/attendance";
+      if (attendanceFilter.startDate && attendanceFilter.endDate) {
+        url += `?startDate=${attendanceFilter.startDate}&endDate=${attendanceFilter.endDate}`;
+      }
+
+      const res = await fetch(url);
       const data = await res.json();
+
       if (res.ok) {
         setAttendanceRecords(data.attendance);
         setFilteredAttendance(data.attendance);
@@ -546,84 +552,74 @@ const removeShift = (index) => {
       </div>
 
       {/* Attendance Management Section */}
-      <div className="mt-8 w-full max-w-6xl bg-gray-800 p-6 rounded-lg shadow-xl border border-purple-600">
-        <h3 className="text-2xl font-bold text-purple-300 mb-4">Attendance Management</h3>
+      <div className="p-6 text-white min-h-screen bg-gray-900 flex flex-col items-center">
+      <h2 className="text-4xl font-extrabold mb-6 text-purple-400 text-center">Attendance Management</h2>
 
-        {/* Attendance Filter */}
-        <div className="flex flex-col sm:flex-row gap-4 mb-4">
-          <div className="flex flex-col">
-            <label className="mb-1 text-gray-300">Start Date</label>
-            <input 
-              type="date" 
-              className="p-3 bg-gray-700 text-white rounded" 
-              value={attendanceFilter.startDate} 
-              onChange={(e) => setAttendanceFilter({ ...attendanceFilter, startDate: e.target.value })} 
-            />
-          </div>
-          <div className="flex flex-col">
-            <label className="mb-1 text-gray-300">End Date</label>
-            <input 
-              type="date" 
-              className="p-3 bg-gray-700 text-white rounded" 
-              value={attendanceFilter.endDate} 
-              onChange={(e) => setAttendanceFilter({ ...attendanceFilter, endDate: e.target.value })} 
-            />
-          </div>
-          <button 
-            className="bg-blue-500 px-4 py-2 rounded hover:bg-blue-600 transition self-end" 
-            onClick={filterAttendance}
-          >
-            Filter
-          </button>
+      {/* Attendance Filter */}
+      <div className="flex flex-col sm:flex-row gap-4 mb-4">
+        <div className="flex flex-col">
+          <label className="mb-1 text-gray-300">Start Date</label>
+          <input 
+            type="date" 
+            className="p-3 bg-gray-700 text-white rounded" 
+            value={attendanceFilter.startDate} 
+            onChange={(e) => setAttendanceFilter({ ...attendanceFilter, startDate: e.target.value })} 
+          />
         </div>
+        <div className="flex flex-col">
+          <label className="mb-1 text-gray-300">End Date</label>
+          <input 
+            type="date" 
+            className="p-3 bg-gray-700 text-white rounded" 
+            value={attendanceFilter.endDate} 
+            onChange={(e) => setAttendanceFilter({ ...attendanceFilter, endDate: e.target.value })} 
+          />
+        </div>
+        <button 
+          className="bg-blue-500 px-4 py-2 rounded hover:bg-blue-600 transition self-end" 
+          onClick={fetchAttendance}
+        >
+          Filter
+        </button>
+      </div>
 
-        {/* Attendance Records Table */}
-<div className="mt-8 w-full max-w-6xl bg-gray-800 p-6 rounded-lg shadow-xl border border-purple-600">
-  <h3 className="text-2xl font-bold text-purple-300 mb-4">Attendance Records</h3>
+      {/* Attendance Records Table */}
+      <div className="w-full max-w-6xl bg-gray-800 p-6 rounded-lg shadow-xl border border-purple-600">
+        <h3 className="text-2xl font-bold text-purple-300 mb-4">Attendance Records</h3>
 
-  {filteredAttendance.length === 0 ? (
-    <p className="text-gray-400 italic text-center py-4">No attendance records found</p>
-  ) : (
-    <div className="overflow-x-auto">
-      <table className="w-full border-collapse border border-gray-600">
-        <thead>
-          <tr className="bg-gray-700 text-white">
-            <th className="p-3 border border-gray-600">Employee Name</th>
-            <th className="p-3 border border-gray-600">Total Sessions</th>
-            <th className="p-3 border border-gray-600">Total Hours Worked</th>
-            <th className="p-3 border border-gray-600">Late Arrivals</th>
-            <th className="p-3 border border-gray-600">Early Departures</th>
-            <th className="p-3 border border-gray-600">Overtime (mins)</th>
-            <th className="p-3 border border-gray-600">Last Status</th>
-          </tr>
-        </thead>
-        <tbody>
-          {filteredAttendance.map((record, index) => (
-            <tr key={index} className="text-gray-300 bg-gray-800 hover:bg-gray-700 transition">
-              <td className="p-3 border border-gray-600">{record.employeeName}</td>
-              <td className="p-3 border border-gray-600">{record.totalSessions}</td>
-              <td className="p-3 border border-gray-600">{(record.totalDuration / 60).toFixed(2)} hrs</td>
-              <td className="p-3 border border-gray-600">{record.lateArrivals}</td>
-              <td className="p-3 border border-gray-600">{record.earlyDepartures}</td>
-              <td className="p-3 border border-gray-600">{record.overtime}</td>
-              <td className="p-3 border border-gray-600">
-                <span className={`px-3 py-1 rounded-lg ${
-                  record.lastStatus === "Present" ? "bg-green-500" :
-                  record.lastStatus === "Late" ? "bg-yellow-500" :
-                  record.lastStatus === "Absent" ? "bg-red-500" :
-                  "bg-gray-500"
-                }`}>
-                  {record.lastStatus}
-                </span>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  )}
-</div>
-
+        {filteredAttendance.length === 0 ? (
+          <p className="text-gray-400 italic text-center py-4">No attendance records found</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse border border-gray-600">
+              <thead>
+                <tr className="bg-gray-700 text-white">
+                  <th className="p-3 border border-gray-600">Employee Name</th>
+                  <th className="p-3 border border-gray-600">Total Sessions</th>
+                  <th className="p-3 border border-gray-600">Total Hours Worked</th>
+                  <th className="p-3 border border-gray-600">Late Arrivals</th>
+                  <th className="p-3 border border-gray-600">Early Departures</th>
+                  <th className="p-3 border border-gray-600">Overtime (mins)</th>
+                  <th className="p-3 border border-gray-600">Last Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredAttendance.map((record, index) => (
+                  <tr key={index} className="text-gray-300 bg-gray-800 hover:bg-gray-700 transition">
+                    <td className="p-3 border border-gray-600">{record.employeeName}</td>
+                    <td className="p-3 border border-gray-600">{record.totalSessions}</td>
+                    <td className="p-3 border border-gray-600">{(record.totalDuration / 60).toFixed(2)} hrs</td>
+                    <td className="p-3 border border-gray-600">{record.lateArrivals}</td>
+                    <td className="p-3 border border-gray-600">{record.earlyDepartures}</td>
+                    <td className="p-3 border border-gray-600">{record.overtime}</td>
+                    <td className="p-3 border border-gray-600">{record.lastStatus}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
       </div>
 
       {/* Location Management Section */}
