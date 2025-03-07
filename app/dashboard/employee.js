@@ -418,7 +418,7 @@ export default function EmployeeDashboard() {
               <select
                 value={location}
                 onChange={(e) => setLocation(e.target.value)}
-                className="w-full bg-[#222222] text-[#EAEAEA] p-3 rounded border border-[#BB86FC] focus:outline-none focus:ring-2 focus:ring-[#BB86FC]"
+                className="w-full bg-[#222222] text-[#BB86FC] p-3 rounded border border-[#BB86FC] focus:outline-none focus:ring-2 focus:ring-[#BB86FC]"
                 disabled={attendanceStatus === "Checked In"}
               >
                 <option value="office">Office</option>
