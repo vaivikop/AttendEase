@@ -15,9 +15,11 @@ export default function DashboardPage() {
     const isLocal = typeof window !== "undefined" && window.location.hostname === "localhost";
 
     if (isLocal) {
-      // Auto-set admin role in local environment
-      setRole("employee");
-    } else if (status === "authenticated") {
+      setRole("employee"); // Auto-set role in local environment
+      return;
+    }
+
+    if (status === "authenticated") {
       fetchUserRole();
     } else if (status === "unauthenticated") {
       router.push("/login"); // Redirect if not logged in
@@ -39,7 +41,13 @@ export default function DashboardPage() {
     }
   };
 
-  if (!role) return <p className="text-center text-white">Loading...</p>;
+  if (!role) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-900 text-white">
+        <div className="w-12 h-12 border-4 border-gray-300 border-t-purple-500 rounded-full animate-spin"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-900 text-white">
