@@ -189,7 +189,7 @@ export default function EmployeeDashboard() {
                 <p className="text-[#A7A7A7]">Role: {stats.role} | Company ID: {stats.companyId}</p>
               </div>
               <div className="md:text-right">
-                <p className="text-[#BB86FC] font-semibold">Today's Status</p>
+                <p className="text-[#BB86FC] font-semibold">Today&apos;s Status</p>
                 <p className={`font-bold text-lg ${attendanceStatus === "Checked In" ? "text-green-400" : "text-[#A7A7A7]"}`}>
                   {attendanceStatus}
                 </p>
@@ -268,7 +268,7 @@ export default function EmployeeDashboard() {
                     <div className="p-2 bg-[#222222] rounded-md">
                       <span className="block">Notes:</span>
                       <span className="block italic text-[#BB86FC] mt-1">
-                        "{stats.currentSession.notes}"
+                      &quot;{stats.currentSession.notes}&quot;
                       </span>
                     </div>
                   )}
@@ -355,7 +355,7 @@ export default function EmployeeDashboard() {
 
           {/* Today's Sessions */}
           <div className={cardClass}>
-            <h2 className={cardHeaderClass}>Today's Sessions</h2>
+            <h2 className={cardHeaderClass}>Today&apos;s Sessions</h2>
             {stats.todaySessions && stats.todaySessions.length > 0 ? (
               <div className="overflow-x-auto rounded-md border border-[#BB86FC]/50">
                 <table className="w-full text-sm">
