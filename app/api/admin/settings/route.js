@@ -3,10 +3,11 @@ import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import connectToDatabase from "@/lib/mongodb";
 import CompanySettings from "@/models/CompanySettings";
 import User from "@/models/User";
+import Company from "@/models/Company";
 
 async function getUser(session) {
   if (process.env.NODE_ENV === "development") {
-    return { role: "user", companyId: "DEV_COMPANY_ID" }; // Bypass auth in development
+    return { role: "admin", companyId: "DEV_COMPANY_ID" };
   }
 
   if (!session || !session.user?.email) return null;
@@ -19,18 +20,14 @@ export async function GET(req) {
     const session = await getServerSession(authOptions);
     const user = await getUser(session);
 
-    if (!user) {
+    if (!user || user.role !== "admin") {
       return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401 });
     }
 
     // Fetch settings for the user's company
     const settings = await CompanySettings.findOne({ companyId: user.companyId });
-
     if (!settings) {
-      return new Response(
-        JSON.stringify({ workingHours: { start: "", end: "" }, shifts: [] }),
-        { status: 200 }
-      );
+      return new Response(JSON.stringify({ error: "Settings not found" }), { status: 404 });
     }
 
     return new Response(JSON.stringify(settings), { status: 200 });
@@ -46,45 +43,36 @@ export async function POST(req) {
     const session = await getServerSession(authOptions);
     const user = await getUser(session);
 
-    if (!user) {
+    if (!user || user.role !== "admin") {
       return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401 });
     }
 
     const body = await req.json();
-    const { workingHours, shifts } = body;
+    const updateFields = {
+      workingHours: body.workingHours,
+      breaks: body.breaks,
+      weekends: body.weekends,
+      holidays: body.holidays,
+      attendanceRules: {
+        autoCheckoutEnabled: body.attendanceRules.autoCheckoutEnabled,
+        autoCheckoutTime: body.attendanceRules.autoCheckoutTime,
+        allowMultipleSessions: body.attendanceRules.allowMultipleSessions,
+        minimumMinutesPerSession: body.attendanceRules.minimumMinutesPerSession,
+        overtimeThreshold: body.attendanceRules.overtimeThreshold,
+        attendanceReportingTimeZone: body.attendanceRules.attendanceReportingTimeZone,
+      },
+      locations: body.locations,
+    };
 
-    if (!workingHours.start || !workingHours.end) {
-      return new Response(JSON.stringify({ error: "Working hours are required" }), { status: 400 });
-    }
+    const settings = await CompanySettings.findOneAndUpdate(
+      { companyId: user.companyId },
+      { $set: updateFields },
+      { new: true, upsert: true }
+    );
 
-    if (!Array.isArray(shifts)) {
-      return new Response(JSON.stringify({ error: "Shifts must be an array" }), { status: 400 });
-    }
-
-    // Validate shift structure
-    for (const shift of shifts) {
-      if (!shift.name || !shift.start || !shift.end) {
-        return new Response(JSON.stringify({ error: "Each shift must have name, start, and end" }), { status: 400 });
-      }
-    }
-
-    // Find or create company settings
-    let settings = await CompanySettings.findOne({ companyId: user.companyId });
-
-    if (settings) {
-      await CompanySettings.findOneAndUpdate(
-        { companyId: user.companyId },
-        { $set: { workingHours, shifts } },
-        { new: true }
-      );
-    } else {
-      settings = new CompanySettings({ companyId: user.companyId, workingHours, shifts });
-      await settings.save();
-    }
-
-    return new Response(JSON.stringify({ message: "Settings updated successfully" }), { status: 200 });
+    return new Response(JSON.stringify({ message: "Settings updated successfully", settings }), { status: 200 });
   } catch (error) {
     console.error("POST settings error:", error);
-    return new Response(JSON.stringify({ error: `Server error: ${error.message}` }), { status: 500 });
+    return new Response(JSON.stringify({ error: "Server error" }), { status: 500 });
   }
 }

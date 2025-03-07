@@ -8,6 +8,7 @@ const UserSchema = new mongoose.Schema(
     password: { type: String, required: true }, 
     companyId: { type: String, required: true }, 
     role: { type: String, enum: ["admin", "employee"], default: "employee" }, 
+    status: { type: String, enum: ["active", "inactive"], default: "active" }, // New field
   },
   { timestamps: true }
 );

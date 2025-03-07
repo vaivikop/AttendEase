@@ -15,7 +15,7 @@ export default function DashboardPage() {
     const isLocal = typeof window !== "undefined" && window.location.hostname === "localhost";
 
     if (isLocal) {
-      setRole("employee"); // Auto-set role in local environment
+      setRole("admin"); // Auto-set role in local environment
       return;
     }
 

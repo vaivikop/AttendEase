@@ -17,13 +17,27 @@ export default function AdminDashboard() {
 
   // Working hours and shifts states
   const [workingHours, setWorkingHours] = useState({ start: "", end: "" });
+  const [requiredHoursPerDay, setRequiredHoursPerDay] = useState(8);
+  const [flexibleCheckIn, setFlexibleCheckIn] = useState(false);
+  const [gracePeriod, setGracePeriod] = useState(15); // in minutes
   const [shifts, setShifts] = useState([]);
   const [newShift, setNewShift] = useState({ name: "", start: "", end: "" });
   const [isSaving, setIsSaving] = useState(false);
 
+  // Attendance states
+  const [attendanceRecords, setAttendanceRecords] = useState([]);
+  const [filteredAttendance, setFilteredAttendance] = useState([]);
+  const [attendanceFilter, setAttendanceFilter] = useState({ startDate: "", endDate: "" });
+
+  // Location states
+  const [locations, setLocations] = useState([]);
+  const [newLocation, setNewLocation] = useState({ name: "", policy: "" });
+
   useEffect(() => {
     fetchStats();
     fetchSettings();
+    fetchAttendance();
+    fetchLocations();
   }, []);
 
   const fetchStats = async () => {
@@ -69,6 +83,11 @@ export default function AdminDashboard() {
         setShifts([]);
       }
       
+      // Set other settings
+      setRequiredHoursPerDay(data.requiredHoursPerDay || 8);
+      setFlexibleCheckIn(data.flexibleCheckIn || false);
+      setGracePeriod(data.gracePeriod || 15);
+      
     } catch (error) {
       console.error("Error in fetchSettings:", error);
       toast.error("Error fetching settings");
@@ -96,7 +115,10 @@ export default function AdminDashboard() {
           name: shift.name,
           start: shift.start,
           end: shift.end
-        }))
+        })),
+        requiredHoursPerDay,
+        flexibleCheckIn,
+        gracePeriod
       };
       
       console.log("Sending settings data:", settingsData);
@@ -193,9 +215,8 @@ export default function AdminDashboard() {
   const deleteEmployee = async () => {
     if (!deletingEmployee) return;
     try {
-      const res = await fetch(`/api/admin/employees/${deletingEmployee._id}`, {
-        method: "DELETE",
-      });
+      const res = await fetch(`/api/admin/employees/${deletingEmployee._id}`, { method: "DELETE" });
+
       const data = await res.json();
       if (res.ok) {
         setEmployees((prev) => prev.filter((e) => e._id !== deletingEmployee._id));
@@ -240,6 +261,71 @@ export default function AdminDashboard() {
     setFilteredEmployees(employees.filter((e) =>
       e.name.toLowerCase().includes(query.toLowerCase())
     ));
+  };
+
+  const fetchAttendance = async () => {
+    try {
+      const res = await fetch("/api/admin/attendance");
+      const data = await res.json();
+      if (res.ok) {
+        setAttendanceRecords(data.attendance);
+        setFilteredAttendance(data.attendance);
+      } else {
+        toast.error("Failed to fetch attendance records");
+      }
+    } catch (error) {
+      console.error("Error fetching attendance:", error);
+      toast.error("Something went wrong");
+    }
+  };
+  
+
+  const filterAttendance = () => {
+    const filtered = attendanceRecords.filter(record => {
+      const recordDate = new Date(record.date);
+      const startDate = new Date(attendanceFilter.startDate);
+      const endDate = new Date(attendanceFilter.endDate);
+      return recordDate >= startDate && recordDate <= endDate;
+    });
+    setFilteredAttendance(filtered);
+  };
+
+  const fetchLocations = async () => {
+    try {
+      const res = await fetch("/api/admin/locations");
+      const data = await res.json();
+      if (res.ok) {
+        setLocations(data.locations);
+      } else {
+        toast.error("Failed to fetch locations");
+      }
+    } catch (error) {
+      console.error("Error fetching locations:", error);
+      toast.error("Something went wrong");
+    }
+  };
+
+  const addLocation = () => {
+    if (!newLocation.name || !newLocation.policy) {
+      toast.error("Please fill all location details");
+      return;
+    }
+
+    const updatedLocations = [
+      ...locations,
+      {
+        name: newLocation.name,
+        policy: newLocation.policy
+      }
+    ];
+    
+    setLocations(updatedLocations);
+    setNewLocation({ name: "", policy: "" });
+  };
+
+  const removeLocation = (index) => {
+    const updatedLocations = locations.filter((_, i) => i !== index);
+    setLocations(updatedLocations);
   };
 
   const paginatedEmployees = filteredEmployees.slice(
@@ -294,6 +380,39 @@ export default function AdminDashboard() {
               onChange={(e) => setWorkingHours({ ...workingHours, end: e.target.value })} 
             />
           </div>
+        </div>
+
+        {/* Required Hours Per Day */}
+        <div className="flex flex-col mb-4">
+          <label className="mb-1 text-gray-300">Required Hours Per Day</label>
+          <input 
+            type="number" 
+            className="p-3 bg-gray-700 text-white rounded" 
+            value={requiredHoursPerDay} 
+            onChange={(e) => setRequiredHoursPerDay(Number(e.target.value))} 
+          />
+        </div>
+
+        {/* Flexible Check-In Toggle */}
+        <div className="flex items-center mb-4">
+          <label className="mr-2 text-gray-300">Flexible Check-In</label>
+          <input 
+            type="checkbox" 
+            className="form-checkbox h-5 w-5 text-purple-600" 
+            checked={flexibleCheckIn} 
+            onChange={(e) => setFlexibleCheckIn(e.target.checked)} 
+          />
+        </div>
+
+        {/* Grace Period */}
+        <div className="flex flex-col mb-4">
+          <label className="mb-1 text-gray-300">Grace Period (minutes)</label>
+          <input 
+            type="number" 
+            className="p-3 bg-gray-700 text-white rounded" 
+            value={gracePeriod} 
+            onChange={(e) => setGracePeriod(Number(e.target.value))} 
+          />
         </div>
 
         {/* Shift Management */}
@@ -422,6 +541,131 @@ export default function AdminDashboard() {
             )}
           </div>
         )}
+      </div>
+
+      {/* Attendance Management Section */}
+      <div className="mt-8 w-full max-w-6xl bg-gray-800 p-6 rounded-lg shadow-xl border border-purple-600">
+        <h3 className="text-2xl font-bold text-purple-300 mb-4">Attendance Management</h3>
+
+        {/* Attendance Filter */}
+        <div className="flex flex-col sm:flex-row gap-4 mb-4">
+          <div className="flex flex-col">
+            <label className="mb-1 text-gray-300">Start Date</label>
+            <input 
+              type="date" 
+              className="p-3 bg-gray-700 text-white rounded" 
+              value={attendanceFilter.startDate} 
+              onChange={(e) => setAttendanceFilter({ ...attendanceFilter, startDate: e.target.value })} 
+            />
+          </div>
+          <div className="flex flex-col">
+            <label className="mb-1 text-gray-300">End Date</label>
+            <input 
+              type="date" 
+              className="p-3 bg-gray-700 text-white rounded" 
+              value={attendanceFilter.endDate} 
+              onChange={(e) => setAttendanceFilter({ ...attendanceFilter, endDate: e.target.value })} 
+            />
+          </div>
+          <button 
+            className="bg-blue-500 px-4 py-2 rounded hover:bg-blue-600 transition self-end" 
+            onClick={filterAttendance}
+          >
+            Filter
+          </button>
+        </div>
+
+        {/* Attendance Records Table */}
+<div className="mt-8 w-full max-w-6xl bg-gray-800 p-6 rounded-lg shadow-xl border border-purple-600">
+  <h3 className="text-2xl font-bold text-purple-300 mb-4">Attendance Records</h3>
+
+  {filteredAttendance.length === 0 ? (
+    <p className="text-gray-400 italic text-center py-4">No attendance records found</p>
+  ) : (
+    <div className="overflow-x-auto">
+      <table className="w-full border-collapse border border-gray-600">
+        <thead>
+          <tr className="bg-gray-700 text-white">
+            <th className="p-3 border border-gray-600">Employee Name</th>
+            <th className="p-3 border border-gray-600">Total Sessions</th>
+            <th className="p-3 border border-gray-600">Total Hours Worked</th>
+            <th className="p-3 border border-gray-600">Late Arrivals</th>
+            <th className="p-3 border border-gray-600">Early Departures</th>
+            <th className="p-3 border border-gray-600">Overtime (mins)</th>
+            <th className="p-3 border border-gray-600">Last Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {filteredAttendance.map((record, index) => (
+            <tr key={index} className="text-gray-300 bg-gray-800 hover:bg-gray-700 transition">
+              <td className="p-3 border border-gray-600">{record.employeeName}</td>
+              <td className="p-3 border border-gray-600">{record.totalSessions}</td>
+              <td className="p-3 border border-gray-600">{(record.totalDuration / 60).toFixed(2)} hrs</td>
+              <td className="p-3 border border-gray-600">{record.lateArrivals}</td>
+              <td className="p-3 border border-gray-600">{record.earlyDepartures}</td>
+              <td className="p-3 border border-gray-600">{record.overtime}</td>
+              <td className="p-3 border border-gray-600">
+                <span className={`px-3 py-1 rounded-lg ${
+                  record.lastStatus === "Present" ? "bg-green-500" :
+                  record.lastStatus === "Late" ? "bg-yellow-500" :
+                  record.lastStatus === "Absent" ? "bg-red-500" :
+                  "bg-gray-500"
+                }`}>
+                  {record.lastStatus}
+                </span>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )}
+</div>
+
+      </div>
+
+      {/* Location Management Section */}
+      <div className="mt-8 w-full max-w-6xl bg-gray-800 p-6 rounded-lg shadow-xl border border-purple-600">
+        <h3 className="text-2xl font-bold text-purple-300 mb-4">Location Management</h3>
+
+        {/* Location List */}
+        <div className="mb-4 max-h-60 overflow-y-auto">
+          {locations.length === 0 ? (
+            <p className="text-gray-400 italic">No locations defined yet</p>
+          ) : (
+            locations.map((location, index) => (
+              <div key={index} className="flex justify-between p-3 bg-gray-700 rounded mb-2">
+                <p>{location.name}: {location.policy}</p>
+                <button className="bg-red-500 px-3 py-1 rounded" onClick={() => removeLocation(index)}>Remove</button>
+              </div>
+            ))
+          )}
+        </div>
+        
+        {/* Add Location Form */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+          <input 
+            type="text" 
+            placeholder="Location Name" 
+            className="p-3 bg-gray-700 text-white rounded" 
+            value={newLocation.name} 
+            onChange={(e) => setNewLocation({ ...newLocation, name: e.target.value })} 
+          />
+          <input 
+            type="text" 
+            placeholder="Location Policy" 
+            className="p-3 bg-gray-700 text-white rounded" 
+            value={newLocation.policy} 
+            onChange={(e) => setNewLocation({ ...newLocation, policy: e.target.value })} 
+          />
+        </div>
+        
+        <button 
+          className="bg-green-500 px-4 py-2 rounded hover:bg-green-600 transition" 
+          onClick={addLocation}
+        >
+          Add Location
+        </button>
       </div>
 
       {/* Edit Employee Modal */}
