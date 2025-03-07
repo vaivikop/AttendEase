@@ -13,6 +13,7 @@ export async function POST(req) {
   try {
     await connectToDatabase();
     const session = await getServerSession(authOptions);
+    
     if (!session) {
       return new Response(JSON.stringify({ error: "Unauthorized: No Session Found" }), {
         status: 401,
@@ -29,7 +30,7 @@ export async function POST(req) {
     }
 
     const body = await req.json();
-
+    
     // Log the received request body for debugging
     console.log("Received settings update request:", body);
 
@@ -41,15 +42,15 @@ export async function POST(req) {
       });
     }
 
-    // Validate expected structure
+    // Correct field mapping to match schema
     const updateFields = {
       workingHours: {
         start: body.workingHours.start || "09:00",
         end: body.workingHours.end || "17:00",
+        requiredHoursPerDay: body.requiredHoursPerDay || 8,
+        flexibleCheckin: body.flexibleCheckIn !== undefined ? body.flexibleCheckIn : true,
+        graceTimeForLate: body.gracePeriod || 15, // Mapped correctly
       },
-      requiredHoursPerDay: body.requiredHoursPerDay || 8,
-      flexibleCheckIn: body.flexibleCheckIn !== undefined ? body.flexibleCheckIn : true,
-      gracePeriod: body.gracePeriod || 15,
       breaks: body.breaks,
       weekends: body.weekends,
       holidays: body.holidays || [],
