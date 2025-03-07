@@ -335,18 +335,18 @@ export default function EmployeeDashboard() {
                     </p>
                   </div>
                   <div className="grid grid-cols-2 gap-2">
-                    <input 
-                      type="date" 
-                      value={dateRange.startDate}
-                      onChange={(e) => handleDateRangeChange(e, 'startDate')}
-                      className="bg-[#222222] text-[#EAEAEA] p-2 rounded border border-[#BB86FC] focus:outline-none focus:ring-2 focus:ring-[#BB86FC] text-xs md:text-sm"
-                    />
-                    <input 
-                      type="date" 
-                      value={dateRange.endDate}
-                      onChange={(e) => handleDateRangeChange(e, 'endDate')}
-                      className="bg-[#222222] text-[#EAEAEA] p-2 rounded border border-[#BB86FC] focus:outline-none focus:ring-2 focus:ring-[#BB86FC] text-xs md:text-sm"
-                    />
+                  <input 
+  type="date" 
+  value={dateRange.startDate}
+  onChange={(e) => handleDateRangeChange(e, 'startDate')}
+  className="bg-black text-[#EAEAEA] p-2 rounded border border-[#BB86FC] focus:outline-none focus:ring-2 focus:ring-[#BB86FC] text-xs md:text-sm"
+/>
+<input 
+  type="date" 
+  value={dateRange.endDate}
+  onChange={(e) => handleDateRangeChange(e, 'endDate')}
+  className="bg-black text-[#EAEAEA] p-2 rounded border border-[#BB86FC] focus:outline-none focus:ring-2 focus:ring-[#BB86FC] text-xs md:text-sm"
+/>
                   </div>
                 </div>
               </div>
@@ -416,17 +416,17 @@ export default function EmployeeDashboard() {
             <div className="mb-4">
               <label className="block text-[#BB86FC] mb-2 text-sm md:text-base">Location</label>
               <select
-                value={location}
-                onChange={(e) => setLocation(e.target.value)}
-                className="w-full bg-[#222222] text-[#BB86FC] p-2 md:p-3 rounded border border-[#BB86FC] focus:outline-none focus:ring-2 focus:ring-[#BB86FC] text-sm md:text-base"
-                disabled={attendanceStatus === "Checked In"}
-              >
-                <option value="office">Office</option>
-                <option value="home">Home (Remote)</option>
-                <option value="field">Field Work</option>
-                <option value="client_site">Client Site</option>
-                <option value="business_trip">Business Trip</option>
-              </select>
+  value={location}
+  onChange={(e) => setLocation(e.target.value)}
+  className="w-full bg-black text-[#EAEAEA] p-2 md:p-3 rounded border border-[#BB86FC] focus:outline-none focus:ring-2 focus:ring-[#BB86FC] text-sm md:text-base"
+  disabled={attendanceStatus === "Checked In"}
+>
+  <option value="office" className="bg-black text-[#BB86FC]">Office</option>
+  <option value="home" className="bg-black text-[#9d5fe8]">Home (Remote)</option>
+  <option value="field" className="bg-black text-[#9d5fe8]">Field Work</option>
+  <option value="client_site" className="bg-black text-[#9d5fe8]">Client Site</option>
+  <option value="business_trip" className="bg-black text-[#9d5fe8]">Business Trip</option>
+</select>
             </div>
 
             {/* Notes */}
