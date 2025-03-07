@@ -75,7 +75,6 @@ export async function POST(req) {
     const body = await req.json();
     console.log("Received settings update request:", body);
 
-    // ✅ Ensure required fields are present
     if (!body.workingHours || !body.breaks || !body.weekends || !body.attendanceRules) {
       return new Response(JSON.stringify({ error: "Missing required fields in request" }), {
         status: 400,
@@ -83,27 +82,20 @@ export async function POST(req) {
       });
     }
 
-    // ✅ Ensure default values if missing
     const updateFields = {
       workingHours: {
         start: body.workingHours.start || "09:00",
         end: body.workingHours.end || "17:00",
         requiredHoursPerDay: body.workingHours.requiredHoursPerDay || 8,
-        flexibleCheckin: body.workingHours.flexibleCheckin ?? true, // ✅ Fixed field
-        graceTimeForLate: body.workingHours.graceTimeForLate || 15, // ✅ Fixed field
+        flexibleCheckin: body.workingHours.flexibleCheckin ?? true,
+        graceTimeForLate: body.workingHours.graceTimeForLate || 15,
       },
       breaks: body.breaks || { lunchBreak: { start: "13:00", end: "14:00" }, shortBreaks: { count: 2, duration: 15 } },
       weekends: body.weekends || [0, 6],
       holidays: body.holidays || [],
-      attendanceRules: {
-        autoCheckoutEnabled: body.attendanceRules?.autoCheckoutEnabled ?? true,
-        autoCheckoutTime: body.attendanceRules?.autoCheckoutTime || "23:59",
-        allowMultipleSessions: body.attendanceRules?.allowMultipleSessions ?? true,
-        minimumMinutesPerSession: body.attendanceRules?.minimumMinutesPerSession || 30,
-        overtimeThreshold: body.attendanceRules?.overtimeThreshold || 480,
-        attendanceReportingTimeZone: body.attendanceRules?.attendanceReportingTimeZone || "UTC",
-      },
+      attendanceRules: body.attendanceRules,
       locations: body.locations || [],
+      shifts: body.shifts || [], // ✅ Ensure shifts are saved
     };
 
     console.log("Updating company settings with:", updateFields);

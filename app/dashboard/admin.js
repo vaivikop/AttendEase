@@ -123,30 +123,23 @@ export default function AdminDashboard() {
     setIsSaving(true);
   
     try {
-      // ✅ Ensure all fields are included
       const settingsData = {
         workingHours: {
           start: workingHours.start,
           end: workingHours.end,
           requiredHoursPerDay: requiredHoursPerDay || 8,
-          flexibleCheckin: flexibleCheckIn,  // ✅ Fixed field name
-          graceTimeForLate: gracePeriod || 15, // ✅ Fixed field name
+          flexibleCheckin: flexibleCheckIn,
+          graceTimeForLate: gracePeriod || 15,
         },
         breaks: breaks || { lunchBreak: { start: "13:00", end: "14:00" }, shortBreaks: { count: 2, duration: 15 } },
-        weekends: weekends || [0, 6], // ✅ Ensure default value
+        weekends: weekends || [0, 6],
         holidays: holidays || [],
-        attendanceRules: attendanceRules || {
-          autoCheckoutEnabled: true,
-          autoCheckoutTime: "23:59",
-          allowMultipleSessions: true,
-          minimumMinutesPerSession: 30,
-          overtimeThreshold: 480,
-          attendanceReportingTimeZone: "UTC",
-        },
+        attendanceRules: attendanceRules,
         locations: locations || [],
+        shifts: shifts || [], // ✅ Ensure shifts are sent
       };
   
-      console.log("Sending settings data:", settingsData);
+      console.log("Sending settings data:", settingsData); // ✅ Debugging
   
       const res = await fetch("/api/admin/settings", {
         method: "POST",
@@ -168,6 +161,7 @@ export default function AdminDashboard() {
       setIsSaving(false);
     }
   };
+  
 const addShift = () => {
     if (!newShift.name || !newShift.start || !newShift.end) {
         toast.error("Please fill all shift details");

@@ -120,6 +120,14 @@ const companySettingsSchema = new mongoose.Schema(
         },
       },
     ],
+    // ✅ Added shifts array
+    shifts: [
+      {
+        name: { type: String, required: true },
+        start: { type: String, required: true }, // Format: HH:mm
+        end: { type: String, required: true }, // Format: HH:mm
+      },
+    ],
   },
   {
     timestamps: true,
